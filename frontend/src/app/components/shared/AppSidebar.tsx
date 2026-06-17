@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { useTheme } from "../../hooks/useTheme"
 import { cn } from '../ui/utils'
+import { useAuth } from '../../context/AuthContext'
 
 interface SidebarLinkProps {
   to: string
@@ -48,7 +49,9 @@ interface AppSidebarProps {
 export function AppSidebar({ isAdmin = false }: AppSidebarProps) {
   const location = useLocation()
   const { theme, toggleTheme } = useTheme()
+  const { user } = useAuth()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const showAdmin = isAdmin || user?.role === 'admin'
 
   const links = (
     <>
@@ -80,7 +83,7 @@ export function AppSidebar({ isAdmin = false }: AppSidebarProps) {
         active={location.pathname === '/profile'}
         onClick={() => setMobileOpen(false)}
       />
-      {isAdmin && (
+      {showAdmin && (
         <>
           <div className="pt-4 pb-1 px-3">
             <span className="text-[10px] text-[var(--muted)] font-mono-display uppercase tracking-widest">

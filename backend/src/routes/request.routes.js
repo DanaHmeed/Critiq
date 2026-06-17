@@ -33,6 +33,7 @@ router.post(
     body('code').notEmpty().withMessage('Code is required'),
     body('language').notEmpty().withMessage('Language is required'),
     body('urgency').optional().isIn(['low', 'normal', 'high']),
+    body('reviewer_id').optional({ nullable: true }).isUUID().withMessage('Valid reviewer UUID required'),
   ],
   createRequest
 )

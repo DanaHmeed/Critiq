@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AppSidebar } from '../components/shared/AppSidebar'
 import { StatusBadge } from '../components/shared/Statusbadge'
 import { UserAvatar } from '../components/shared/Useravatar'
@@ -15,54 +15,76 @@ import {
   Shield,
   TrendingUp,
 } from 'lucide-react'
-
-const mockStats = [
-  { label: 'Total Users',    value: '142',  icon: Users,        color: 'text-blue-400',   bg: 'bg-blue-500/10' },
-  { label: 'Total Requests', value: '584',  icon: FileCode,     color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
-  { label: 'Comments',       value: '2.3k', icon: MessageSquare,color: 'text-purple-400', bg: 'bg-purple-500/10' },
-  { label: 'Completed',      value: '391',  icon: CheckCircle,  color: 'text-green-400',  bg: 'bg-green-500/10' },
-  { label: 'Pending',        value: '47',   icon: Clock,        color: 'text-orange-400', bg: 'bg-orange-500/10' },
-  { label: 'Avg Response',   value: '3.8h', icon: TrendingUp,   color: 'text-[var(--muted)]', bg: 'bg-[var(--secondary)]' },
-]
-
-const mockUsers = [
-  { id: '1', name: 'Sarah Chen',   email: 'sarah@dev.io',  role: 'reviewer',  review_count: 47, created_at: '2026-01-12' },
-  { id: '2', name: 'Mike Johnson', email: 'mike@dev.io',   role: 'reviewer',  review_count: 32, created_at: '2026-02-03' },
-  { id: '3', name: 'Emma Davis',   email: 'emma@dev.io',   role: 'requester', review_count: 0,  created_at: '2026-03-15' },
-  { id: '4', name: 'Alex Kumar',   email: 'alex@dev.io',   role: 'admin',     review_count: 58, created_at: '2025-11-20' },
-  { id: '5', name: 'Tom Baker',    email: 'tom@dev.io',    role: 'suspended', review_count: 3,  created_at: '2026-04-01' },
-]
-
-const mockRequests = [
-  { id: '1', title: 'React hooks optimisation', language: 'TypeScript', author_name: 'Emma Davis',   status: 'in-review' as const, comment_count: 3, created_at: '2 hours ago' },
-  { id: '2', title: 'Auth middleware',          language: 'JavaScript', author_name: 'Tom Baker',    status: 'completed' as const, comment_count: 7, created_at: '1 day ago' },
-  { id: '3', title: 'DB query performance',     language: 'SQL',        author_name: 'Emma Davis',   status: 'pending'   as const, comment_count: 0, created_at: '3 hours ago' },
-  { id: '4', title: 'API rate limiting',        language: 'TypeScript', author_name: 'Alex Kumar',   status: 'completed' as const, comment_count: 5, created_at: '2 days ago' },
-]
+import { adminApi, type AdminStats } from '../../api/admin'
+import type { ReviewRequest, User } from '../../api/types'
+import { countValue, formatRelativeTime } from '../utils/format'
 
 type Tab = 'overview' | 'users' | 'requests'
 
 const roleColors: Record<string, string> = {
-  admin:     'text-[var(--accent)] border-[var(--accent)]/30 bg-[var(--accent)]/10',
-  reviewer:  'text-blue-400 border-blue-500/30 bg-blue-500/10',
+  admin: 'text-[var(--accent)] border-[var(--accent)]/30 bg-[var(--accent)]/10',
+  reviewer: 'text-blue-400 border-blue-500/30 bg-blue-500/10',
   requester: 'text-[var(--muted)] border-border bg-[var(--secondary)]',
   suspended: 'text-red-400 border-red-500/30 bg-red-500/10',
 }
 
-/* ── Component ───────────────────────────────────────────────────── */
+const emptyStats: AdminStats = {
+  total_users: 0,
+  total_requests: 0,
+  total_comments: 0,
+  pending: 0,
+  in_review: 0,
+  completed: 0,
+}
+
 export function AdminDashboard() {
   const [tab, setTab] = useState<Tab>('overview')
-  const [users, setUsers] = useState(mockUsers)
+  const [stats, setStats] = useState<AdminStats>(emptyStats)
+  const [users, setUsers] = useState<User[]>([])
+  const [requests, setRequests] = useState<ReviewRequest[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
-  function toggleSuspend(id: string) {
-    setUsers((prev) =>
-      prev.map((u) =>
-        u.id === id
-          ? { ...u, role: u.role === 'suspended' ? 'requester' : 'suspended' }
-          : u
-      )
-    )
+  useEffect(() => {
+    let active = true
+
+    Promise.all([adminApi.stats(), adminApi.users(), adminApi.requests()])
+      .then(([statsRes, usersRes, requestsRes]) => {
+        if (!active) return
+        setStats(statsRes.stats)
+        setUsers(usersRes.users)
+        setRequests(requestsRes.requests)
+      })
+      .catch((err) => {
+        if (active) setError(err instanceof Error ? err.message : 'Unable to load admin data')
+      })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [])
+
+  async function toggleSuspend(id: string, currentRole: string) {
+    setError('')
+    try {
+      const { user } = await adminApi.suspend(id, currentRole !== 'suspended')
+      setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, role: user.role } : u)))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to update user')
+    }
   }
+
+  const statCards = [
+    { label: 'Total Users', value: stats.total_users, icon: Users, color: 'text-blue-400', bg: 'bg-blue-500/10' },
+    { label: 'Total Requests', value: stats.total_requests, icon: FileCode, color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
+    { label: 'Comments', value: stats.total_comments, icon: MessageSquare, color: 'text-purple-400', bg: 'bg-purple-500/10' },
+    { label: 'Completed', value: stats.completed, icon: CheckCircle, color: 'text-green-400', bg: 'bg-green-500/10' },
+    { label: 'Pending', value: stats.pending, icon: Clock, color: 'text-orange-400', bg: 'bg-orange-500/10' },
+    { label: 'In Review', value: stats.in_review, icon: TrendingUp, color: 'text-[var(--muted)]', bg: 'bg-[var(--secondary)]' },
+  ]
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -70,8 +92,6 @@ export function AdminDashboard() {
 
       <main className="flex-1 overflow-auto">
         <div className="max-w-[1200px] mx-auto p-4 sm:p-6 lg:p-8">
-
-          {/* Header */}
           <div className="mb-8 mt-10 lg:mt-0">
             <div className="flex items-center gap-2 mb-1">
               <h1>Admin Dashboard</h1>
@@ -82,7 +102,9 @@ export function AdminDashboard() {
             <p className="text-sm text-[var(--muted)]">Platform overview and user management</p>
           </div>
 
-          {/* Tabs */}
+          {error && <div className="mb-4 text-sm text-red-400">{error}</div>}
+          {loading && <div className="mb-4 text-sm text-[var(--muted)]">Loading admin data...</div>}
+
           <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-1">
             {(['overview', 'users', 'requests'] as Tab[]).map((t) => (
               <button
@@ -100,11 +122,10 @@ export function AdminDashboard() {
             ))}
           </div>
 
-          {/* ── Overview ── */}
           {tab === 'overview' && (
             <div className="space-y-6">
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                {mockStats.map((s) => (
+                {statCards.map((s) => (
                   <div key={s.label} className="p-4 bg-[var(--surface)] border border-border rounded-md">
                     <div className={cn('w-8 h-8 rounded-md flex items-center justify-center mb-3', s.bg)}>
                       <s.icon className={cn('w-4 h-4', s.color)} />
@@ -115,9 +136,7 @@ export function AdminDashboard() {
                 ))}
               </div>
 
-              {/* Quick tables */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Recent users */}
                 <div>
                   <h3 className="text-xs font-mono-display uppercase tracking-widest text-[var(--muted)] mb-3">
                     Recent Users
@@ -135,34 +154,33 @@ export function AdminDashboard() {
                         </span>
                       </div>
                     ))}
+                    {!loading && users.length === 0 && <div className="p-3 text-sm text-[var(--muted)]">No users yet.</div>}
                   </div>
                 </div>
 
-                {/* Recent requests */}
                 <div>
                   <h3 className="text-xs font-mono-display uppercase tracking-widest text-[var(--muted)] mb-3">
                     Recent Requests
                   </h3>
                   <div className="bg-[var(--surface)] border border-border rounded-md divide-y divide-border">
-                    {mockRequests.slice(0, 4).map((r) => (
+                    {requests.slice(0, 4).map((r) => (
                       <div key={r.id} className="flex items-center gap-3 p-3">
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">{r.title}</p>
-                          <p className="text-xs text-[var(--muted)]">{r.author_name} · {r.created_at}</p>
+                          <p className="text-xs text-[var(--muted)]">{r.author_name} · {formatRelativeTime(r.created_at)}</p>
                         </div>
                         <StatusBadge status={r.status} size="sm" />
                       </div>
                     ))}
+                    {!loading && requests.length === 0 && <div className="p-3 text-sm text-[var(--muted)]">No requests yet.</div>}
                   </div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* ── Users ── */}
           {tab === 'users' && (
             <div className="bg-[var(--surface)] border border-border rounded-md overflow-hidden">
-              {/* Mobile cards */}
               <div className="sm:hidden divide-y divide-border">
                 {users.map((u) => (
                   <div key={u.id} className="p-4 flex items-start gap-3">
@@ -178,7 +196,7 @@ export function AdminDashboard() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => toggleSuspend(u.id)}
+                        onClick={() => toggleSuspend(u.id, u.role)}
                         className={cn(
                           'text-xs h-7',
                           u.role === 'suspended'
@@ -194,7 +212,6 @@ export function AdminDashboard() {
                 ))}
               </div>
 
-              {/* Desktop table */}
               <table className="hidden sm:table w-full">
                 <thead className="bg-[var(--secondary)] text-[10px] font-mono-display uppercase tracking-widest border-b border-border">
                   <tr>
@@ -222,7 +239,7 @@ export function AdminDashboard() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-sm font-mono-display">{u.review_count}</td>
-                      <td className="px-4 py-3 text-xs text-[var(--muted)]">{u.created_at}</td>
+                      <td className="px-4 py-3 text-xs text-[var(--muted)]">{formatRelativeTime(u.created_at)}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <Button size="sm" variant="ghost" className="h-7 px-2">
@@ -231,7 +248,7 @@ export function AdminDashboard() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => toggleSuspend(u.id)}
+                            onClick={() => toggleSuspend(u.id, u.role)}
                             className={cn(
                               'h-7 text-xs',
                               u.role === 'suspended'
@@ -254,25 +271,22 @@ export function AdminDashboard() {
             </div>
           )}
 
-          {/* ── Requests ── */}
           {tab === 'requests' && (
             <div className="bg-[var(--surface)] border border-border rounded-md overflow-hidden">
-              {/* Mobile */}
               <div className="sm:hidden divide-y divide-border">
-                {mockRequests.map((r) => (
+                {requests.map((r) => (
                   <div key={r.id} className="p-4">
                     <div className="flex items-start justify-between gap-2 mb-1">
                       <span className="font-medium text-sm">{r.title}</span>
                       <StatusBadge status={r.status} size="sm" />
                     </div>
                     <p className="text-xs text-[var(--muted)]">
-                      {r.author_name} · {r.language} · {r.created_at}
+                      {r.author_name} · {r.language} · {formatRelativeTime(r.created_at)}
                     </p>
                   </div>
                 ))}
               </div>
 
-              {/* Desktop table */}
               <table className="hidden sm:table w-full">
                 <thead className="bg-[var(--secondary)] text-[10px] font-mono-display uppercase tracking-widest border-b border-border">
                   <tr>
@@ -285,7 +299,7 @@ export function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {mockRequests.map((r) => (
+                  {requests.map((r) => (
                     <tr key={r.id} className="hover:bg-[var(--secondary)]/40 transition-colors">
                       <td className="px-4 py-3 text-sm font-medium">{r.title}</td>
                       <td className="px-4 py-3 text-sm text-[var(--muted)]">{r.author_name}</td>
@@ -295,8 +309,8 @@ export function AdminDashboard() {
                         </span>
                       </td>
                       <td className="px-4 py-3"><StatusBadge status={r.status} size="sm" /></td>
-                      <td className="px-4 py-3 text-sm font-mono-display text-[var(--muted)]">{r.comment_count}</td>
-                      <td className="px-4 py-3 text-xs text-[var(--muted)]">{r.created_at}</td>
+                      <td className="px-4 py-3 text-sm font-mono-display text-[var(--muted)]">{countValue(r.comment_count)}</td>
+                      <td className="px-4 py-3 text-xs text-[var(--muted)]">{formatRelativeTime(r.created_at)}</td>
                     </tr>
                   ))}
                 </tbody>

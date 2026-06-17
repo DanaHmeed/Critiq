@@ -62,7 +62,7 @@ const updateUserRole = asyncHandler(async (req, res) => {
   const { id }   = req.params
   const { role } = req.body
 
-  if (!['requester', 'reviewer', 'admin'].includes(role)) {
+  if (!['requester', 'reviewer', 'admin', 'suspended'].includes(role)) {
     return res.status(400).json({ error: 'Invalid role' })
   }
 

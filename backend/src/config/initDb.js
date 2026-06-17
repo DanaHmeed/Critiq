@@ -13,13 +13,18 @@ CREATE TABLE IF NOT EXISTS users (
   email         VARCHAR(255) UNIQUE NOT NULL,
   password_hash VARCHAR(255)        NOT NULL,
   role          VARCHAR(20)  NOT NULL DEFAULT 'requester'
-                  CHECK (role IN ('requester', 'reviewer', 'admin')),
+                  CHECK (role IN ('requester', 'reviewer', 'admin', 'suspended')),
   bio           TEXT,
   avg_response_time INTERVAL,
   review_count  INTEGER NOT NULL DEFAULT 0,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
+ALTER TABLE users
+  ADD CONSTRAINT users_role_check
+  CHECK (role IN ('requester', 'reviewer', 'admin', 'suspended'));
 
 -- ── review_requests ─────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS review_requests (

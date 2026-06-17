@@ -104,6 +104,17 @@ const createRequest = asyncHandler(async (req, res) => {
 
   const { title, description, language, code, urgency = 'normal', reviewer_id } = req.body
 
+  if (reviewer_id) {
+    const reviewer = await query(
+      "SELECT id FROM users WHERE id = $1 AND role IN ('reviewer', 'admin')",
+      [reviewer_id]
+    )
+
+    if (!reviewer.rows[0]) {
+      return res.status(400).json({ error: 'Reviewer must be an active reviewer or admin' })
+    }
+  }
+
   const result = await query(
     `INSERT INTO review_requests
        (title, description, language, code, urgency, author_id, reviewer_id, status)
@@ -186,6 +197,27 @@ const assignReviewer = asyncHandler(async (req, res) => {
   const { id }          = req.params
   const { reviewer_id } = req.body
 
+  const existing = await query('SELECT author_id FROM review_requests WHERE id = $1', [id])
+  if (!existing.rows[0]) {
+    return res.status(404).json({ error: 'Request not found' })
+  }
+
+  const isAuthor = existing.rows[0].author_id === req.user.id
+  const isAdmin  = req.user.role === 'admin'
+
+  if (!isAuthor && !isAdmin) {
+    return res.status(403).json({ error: 'Not authorised to assign this request' })
+  }
+
+  const reviewer = await query(
+    "SELECT id FROM users WHERE id = $1 AND role IN ('reviewer', 'admin')",
+    [reviewer_id]
+  )
+
+  if (!reviewer.rows[0]) {
+    return res.status(400).json({ error: 'Reviewer must be an active reviewer or admin' })
+  }
+
   const result = await query(
     `UPDATE review_requests
      SET reviewer_id = $1, status = 'in-review'
@@ -193,10 +225,6 @@ const assignReviewer = asyncHandler(async (req, res) => {
      RETURNING *`,
     [reviewer_id, id]
   )
-
-  if (!result.rows[0]) {
-    return res.status(404).json({ error: 'Request not found' })
-  }
 
   res.json({ request: result.rows[0] })
 })
