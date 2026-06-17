@@ -1,24 +1,33 @@
+// frontend/src/app/pages/Register.tsx
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
-import { Code, Eye } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
+import { Code, Eye, Loader2 } from 'lucide-react'
 import { cn } from '../components/ui/utils'
 
 export function Register() {
   const navigate = useNavigate()
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    role: '',
-  })
+  const { register } = useAuth()
+  const [formData, setFormData] = useState({ name: '', email: '', password: '', role: '' })
+  const [error,    setError]    = useState('')
+  const [loading,  setLoading]  = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    localStorage.setItem('user', JSON.stringify(formData))
-    navigate('/dashboard')
+    if (!formData.role) return
+    setError('')
+    setLoading(true)
+    try {
+      await register(formData.name, formData.email, formData.password, formData.role)
+      navigate('/dashboard')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Registration failed. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -32,6 +41,12 @@ export function Register() {
         </div>
 
         <div className="bg-[var(--surface)] border border-border rounded-md p-6 sm:p-8">
+          {error && (
+            <div className="mb-4 px-3 py-2.5 bg-red-500/10 border border-red-500/30 rounded text-sm text-red-400">
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-1.5">
               <Label htmlFor="name">Full Name</Label>
@@ -62,62 +77,52 @@ export function Register() {
               <Input
                 id="password"
                 type="password"
-                placeholder="••••••••"
+                placeholder="Min. 6 characters"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 required
+                minLength={6}
               />
             </div>
 
             <div className="space-y-2">
               <Label>I want to</Label>
               <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, role: 'requester' })}
-                  className={cn(
-                    'p-4 border rounded-md text-left transition-all',
-                    formData.role === 'requester'
-                      ? 'border-[var(--accent)] bg-[var(--accent)]/8'
-                      : 'border-border hover:border-[var(--accent)]/40 bg-transparent'
-                  )}
-                >
-                  <Code className="w-5 h-5 mb-2 text-[var(--accent)]" />
-                  <div className="text-sm font-medium text-foreground">Request Reviews</div>
-                  <div className="text-xs text-[var(--muted)] mt-0.5">Submit code for feedback</div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, role: 'reviewer' })}
-                  className={cn(
-                    'p-4 border rounded-md text-left transition-all',
-                    formData.role === 'reviewer'
-                      ? 'border-[var(--accent)] bg-[var(--accent)]/8'
-                      : 'border-border hover:border-[var(--accent)]/40 bg-transparent'
-                  )}
-                >
-                  <Eye className="w-5 h-5 mb-2 text-[var(--accent)]" />
-                  <div className="text-sm font-medium text-foreground">Review Code</div>
-                  <div className="text-xs text-[var(--muted)] mt-0.5">Provide expert feedback</div>
-                </button>
+                {[
+                  { value: 'requester', icon: Code,  title: 'Request Reviews', desc: 'Submit code for feedback' },
+                  { value: 'reviewer',  icon: Eye,   title: 'Review Code',     desc: 'Provide expert feedback' },
+                ].map(({ value, icon: Icon, title, desc }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, role: value })}
+                    className={cn(
+                      'p-4 border rounded-md text-left transition-all',
+                      formData.role === value
+                        ? 'border-[var(--accent)] bg-[var(--accent)]/8'
+                        : 'border-border hover:border-[var(--accent)]/40 bg-transparent'
+                    )}
+                  >
+                    <Icon className="w-5 h-5 mb-2 text-[var(--accent)]" />
+                    <div className="text-sm font-medium text-foreground">{title}</div>
+                    <div className="text-xs text-[var(--muted)] mt-0.5">{desc}</div>
+                  </button>
+                ))}
               </div>
             </div>
 
             <Button
               type="submit"
-              disabled={!formData.role}
+              disabled={!formData.role || loading}
               className="w-full bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90 border-0 disabled:opacity-40"
             >
-              Create account
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Create account'}
             </Button>
           </form>
 
           <p className="mt-6 text-center text-sm text-[var(--muted)]">
             Already have an account?{' '}
-            <Link to="/login" className="text-[var(--accent)] hover:underline">
-              Sign in
-            </Link>
+            <Link to="/login" className="text-[var(--accent)] hover:underline">Sign in</Link>
           </p>
         </div>
       </div>

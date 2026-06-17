@@ -1,25 +1,37 @@
+// frontend/src/app/pages/Login.tsx
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
-import { Github } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
+import { Github, Loader2 } from 'lucide-react'
 
 export function Login() {
   const navigate = useNavigate()
-  const [email, setEmail] = useState('')
+  const { login } = useAuth()
+  const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
+  const [error,    setError]    = useState('')
+  const [loading,  setLoading]  = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    localStorage.setItem('user', JSON.stringify({ email, role: 'reviewer' }))
-    navigate('/dashboard')
+    setError('')
+    setLoading(true)
+    try {
+      await login(email, password)
+      navigate('/dashboard')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Invalid email or password')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <div className="w-full max-w-md">
-        {/* Brand */}
         <div className="text-center mb-8">
           <Link to="/" className="inline-block">
             <h1 className="text-2xl font-mono-display mb-2">Critiq</h1>
@@ -28,6 +40,12 @@ export function Login() {
         </div>
 
         <div className="bg-[var(--surface)] border border-border rounded-md p-6 sm:p-8">
+          {error && (
+            <div className="mb-4 px-3 py-2.5 bg-red-500/10 border border-red-500/30 rounded text-sm text-red-400">
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-1.5">
               <Label htmlFor="email">Email</Label>
@@ -62,38 +80,30 @@ export function Login() {
 
             <Button
               type="submit"
-              className="w-full bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90 border-0"
+              disabled={loading}
+              className="w-full bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90 border-0 disabled:opacity-60"
             >
-              Sign in
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Sign in'}
             </Button>
           </form>
 
-          {/* Divider */}
           <div className="my-6 relative">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center">
-              <span className="bg-[var(--surface)] px-3 text-xs text-[var(--muted)]">
-                Or continue with
-              </span>
+              <span className="bg-[var(--surface)] px-3 text-xs text-[var(--muted)]">Or continue with</span>
             </div>
           </div>
 
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-          >
+          <Button type="button" variant="outline" className="w-full">
             <Github className="w-4 h-4" />
             GitHub
           </Button>
 
           <p className="mt-6 text-center text-sm text-[var(--muted)]">
             Don't have an account?{' '}
-            <Link to="/register" className="text-[var(--accent)] hover:underline">
-              Sign up
-            </Link>
+            <Link to="/register" className="text-[var(--accent)] hover:underline">Sign up</Link>
           </p>
         </div>
       </div>

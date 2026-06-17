@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { AppSidebar } from '../components/shared/AppSidebar'
 import { StatusBadge } from '../components/shared/Statusbadge'
@@ -5,51 +6,49 @@ import { UserAvatar } from '../components/shared/Useravatar'
 import { LanguageChip } from '../components/shared/Languagechip'
 import { Button } from '../components/ui/button'
 import { Clock, FileCode, CheckCircle, TrendingUp, Plus, MessageSquare } from 'lucide-react'
-
-const mockRequests = [
-  {
-    id: 1,
-    title: 'React hooks optimization',
-    language: 'typescript',
-    reviewer: { name: 'Sarah Chen', avatar: '' },
-    status: 'in-review' as const,
-    date: '2 hours ago',
-    comments: 3,
-  },
-  {
-    id: 2,
-    title: 'Authentication middleware',
-    language: 'javascript',
-    reviewer: { name: 'Mike Johnson', avatar: '' },
-    status: 'completed' as const,
-    date: '1 day ago',
-    comments: 7,
-  },
-  {
-    id: 3,
-    title: 'Database query performance',
-    language: 'sql',
-    reviewer: null,
-    status: 'pending' as const,
-    date: '3 hours ago',
-    comments: 0,
-  },
-]
-
-const mockActivity = [
-  { user: 'Sarah Chen', text: 'commented on line 42', time: '10 min ago' },
-  { user: 'Mike Johnson', text: 'completed review', time: '1 hour ago' },
-  { user: 'You', text: 'submitted new request', time: '3 hours ago' },
-]
-
-const stats = [
-  { label: 'Open', value: '3', icon: Clock, color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
-  { label: 'In Review', value: '1', icon: FileCode, color: 'text-blue-400', bg: 'bg-blue-500/10' },
-  { label: 'Completed', value: '12', icon: CheckCircle, color: 'text-green-400', bg: 'bg-green-500/10' },
-  { label: 'Avg Response', value: '4.2h', icon: TrendingUp, color: 'text-[var(--muted)]', bg: 'bg-[var(--secondary)]' },
-]
+import { requestApi } from '../../api/requests'
+import type { ReviewRequest } from '../../api/types'
+import { countValue, formatRelativeTime } from '../utils/format'
 
 export function Dashboard() {
+  const [requests, setRequests] = useState<ReviewRequest[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    let active = true
+
+    requestApi.mine()
+      .then(({ requests }) => {
+        if (active) setRequests(requests)
+      })
+      .catch((err) => {
+        if (active) setError(err instanceof Error ? err.message : 'Unable to load dashboard')
+      })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const stats = useMemo(() => {
+    const pending = requests.filter((r) => r.status === 'pending').length
+    const inReview = requests.filter((r) => r.status === 'in-review').length
+    const completed = requests.filter((r) => r.status === 'completed').length
+
+    return [
+      { label: 'Open', value: String(pending), icon: Clock, color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
+      { label: 'In Review', value: String(inReview), icon: FileCode, color: 'text-blue-400', bg: 'bg-blue-500/10' },
+      { label: 'Completed', value: String(completed), icon: CheckCircle, color: 'text-green-400', bg: 'bg-green-500/10' },
+      { label: 'Total', value: String(requests.length), icon: TrendingUp, color: 'text-[var(--muted)]', bg: 'bg-[var(--secondary)]' },
+    ]
+  }, [requests])
+
+  const recentRequests = requests.slice(0, 5)
+
   return (
     <div className="flex min-h-screen bg-background">
       <AppSidebar />
@@ -98,9 +97,14 @@ export function Dashboard() {
                 Recent Requests
               </h3>
               <div className="bg-[var(--surface)] border border-border rounded-md overflow-hidden">
+                {error && <div className="p-4 text-sm text-red-400">{error}</div>}
+                {loading && <div className="p-4 text-sm text-[var(--muted)]">Loading requests...</div>}
+                {!loading && !error && recentRequests.length === 0 && (
+                  <div className="p-4 text-sm text-[var(--muted)]">No review requests yet.</div>
+                )}
                 {/* Mobile card view */}
                 <div className="sm:hidden divide-y divide-border">
-                  {mockRequests.map((req) => (
+                  {recentRequests.map((req) => (
                     <Link
                       key={req.id}
                       to={`/review/${req.id}`}
@@ -112,11 +116,11 @@ export function Dashboard() {
                       </div>
                       <div className="flex items-center gap-3 text-xs text-[var(--muted)]">
                         <LanguageChip language={req.language} />
-                        <span>{req.date}</span>
-                        {req.comments > 0 && (
+                        <span>{formatRelativeTime(req.created_at)}</span>
+                        {countValue(req.comment_count) > 0 && (
                           <span className="flex items-center gap-1">
                             <MessageSquare className="w-3 h-3" />
-                            {req.comments}
+                            {countValue(req.comment_count)}
                           </span>
                         )}
                       </div>
@@ -136,7 +140,7 @@ export function Dashboard() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {mockRequests.map((req) => (
+                    {recentRequests.map((req) => (
                       <tr key={req.id} className="hover:bg-[var(--secondary)]/50 transition-colors">
                         <td className="px-4 py-3">
                           <Link
@@ -144,10 +148,10 @@ export function Dashboard() {
                             className="flex items-center gap-2 hover:text-[var(--accent)] text-sm transition-colors"
                           >
                             <span>{req.title}</span>
-                            {req.comments > 0 && (
+                            {countValue(req.comment_count) > 0 && (
                               <span className="flex items-center gap-1 text-xs text-[var(--muted)]">
                                 <MessageSquare className="w-3 h-3" />
-                                {req.comments}
+                                {countValue(req.comment_count)}
                               </span>
                             )}
                           </Link>
@@ -156,10 +160,10 @@ export function Dashboard() {
                           <LanguageChip language={req.language} />
                         </td>
                         <td className="px-4 py-3">
-                          {req.reviewer ? (
+                          {req.reviewer_name ? (
                             <div className="flex items-center gap-2">
-                              <UserAvatar name={req.reviewer.name} size="sm" />
-                              <span className="text-xs text-[var(--muted)]">{req.reviewer.name}</span>
+                              <UserAvatar name={req.reviewer_name} size="sm" />
+                              <span className="text-xs text-[var(--muted)]">{req.reviewer_name}</span>
                             </div>
                           ) : (
                             <span className="text-xs text-[var(--muted)]">Unassigned</span>
@@ -168,7 +172,7 @@ export function Dashboard() {
                         <td className="px-4 py-3">
                           <StatusBadge status={req.status} size="sm" />
                         </td>
-                        <td className="px-4 py-3 text-xs text-[var(--muted)]">{req.date}</td>
+                        <td className="px-4 py-3 text-xs text-[var(--muted)]">{formatRelativeTime(req.created_at)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -182,18 +186,21 @@ export function Dashboard() {
                 Activity
               </h3>
               <div className="bg-[var(--surface)] border border-border rounded-md p-4 space-y-4">
-                {mockActivity.map((item, idx) => (
-                  <div key={idx} className="flex gap-3">
-                    <UserAvatar name={item.user} size="sm" />
+                {recentRequests.map((item) => (
+                  <div key={item.id} className="flex gap-3">
+                    <UserAvatar name={item.reviewer_name || item.author_name || 'You'} size="sm" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm">
-                        <span className="font-medium">{item.user}</span>{' '}
-                        <span className="text-[var(--muted)]">{item.text}</span>
+                        <span className="font-medium">{item.title}</span>{' '}
+                        <span className="text-[var(--muted)]">is {item.status}</span>
                       </p>
-                      <p className="text-xs text-[var(--muted)] mt-0.5">{item.time}</p>
+                      <p className="text-xs text-[var(--muted)] mt-0.5">{formatRelativeTime(item.created_at)}</p>
                     </div>
                   </div>
                 ))}
+                {!loading && recentRequests.length === 0 && (
+                  <p className="text-sm text-[var(--muted)]">Recent activity will appear here.</p>
+                )}
               </div>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { AppSidebar } from '../components/shared/AppSidebar'
 import { StepTracker } from '../components/shared/StepTracker'
@@ -9,32 +9,80 @@ import { Label } from '../components/ui/label'
 import { Textarea } from '../components/ui/textarea'
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react'
 import { cn } from '../components/ui/utils'
-
-const mockReviewers = [
-  { id: 1, name: 'Sarah Chen', avatar: '', stats: { reviews: 47, avgTime: '3.2h' }, languages: ['TypeScript', 'React'] },
-  { id: 2, name: 'Mike Johnson', avatar: '', stats: { reviews: 32, avgTime: '5.1h' }, languages: ['JavaScript', 'Node.js'] },
-  { id: 3, name: 'Emma Davis', avatar: '', stats: { reviews: 58, avgTime: '2.8h' }, languages: ['Python', 'SQL'] },
-]
+import { requestApi } from '../../api/requests'
+import { userApi } from '../../api/users'
+import type { User } from '../../api/types'
 
 const languages = ['TypeScript', 'JavaScript', 'Python', 'Java', 'Go', 'Rust', 'SQL', 'C++']
+const urgencies = ['low', 'normal', 'high'] as const
 
 export function CreateRequest() {
   const navigate = useNavigate()
   const [currentStep, setCurrentStep] = useState(0)
+  const [reviewers, setReviewers] = useState<User[]>([])
+  const [loadingReviewers, setLoadingReviewers] = useState(true)
+  const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     language: 'TypeScript',
     code: '',
-    reviewerId: null as number | null,
-    urgency: 'normal',
+    reviewerId: null as string | null,
+    urgency: 'normal' as 'low' | 'normal' | 'high',
   })
+
+  useEffect(() => {
+    let active = true
+
+    userApi.reviewers()
+      .then(({ reviewers }) => {
+        if (active) setReviewers(reviewers)
+      })
+      .catch((err) => {
+        if (active) setError(err instanceof Error ? err.message : 'Unable to load reviewers')
+      })
+      .finally(() => {
+        if (active) setLoadingReviewers(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [])
 
   const steps = [
     { label: 'Details', completed: currentStep > 0 },
     { label: 'Code', completed: currentStep > 1 },
     { label: 'Reviewer', completed: currentStep > 2 },
   ]
+
+  const canContinue =
+    currentStep === 0
+      ? formData.title.trim().length > 0 && formData.language.length > 0
+      : formData.code.trim().length > 0
+
+  async function handleSubmit() {
+    if (!formData.reviewerId) return
+
+    setSubmitting(true)
+    setError('')
+    try {
+      const { request } = await requestApi.create({
+        title: formData.title,
+        description: formData.description,
+        language: formData.language,
+        code: formData.code,
+        urgency: formData.urgency,
+        reviewer_id: formData.reviewerId,
+      })
+      navigate(`/review/${request.id}`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to submit request')
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -60,7 +108,8 @@ export function CreateRequest() {
           </div>
 
           <div className="bg-[var(--surface)] border border-border rounded-md p-6 sm:p-8">
-            {/* Step 1: Details */}
+            {error && <div className="mb-4 text-sm text-red-400">{error}</div>}
+
             {currentStep === 0 && (
               <div className="space-y-5">
                 <div className="space-y-1.5">
@@ -98,7 +147,6 @@ export function CreateRequest() {
               </div>
             )}
 
-            {/* Step 2: Code */}
             {currentStep === 1 && (
               <div className="space-y-1.5">
                 <Label htmlFor="code">Code Snippet</Label>
@@ -113,15 +161,21 @@ export function CreateRequest() {
               </div>
             )}
 
-            {/* Step 3: Reviewer */}
             {currentStep === 2 && (
               <div className="space-y-6">
                 <div className="space-y-3">
                   <Label>Select Reviewer</Label>
                   <div className="space-y-3">
-                    {mockReviewers.map((reviewer) => (
+                    {loadingReviewers && (
+                      <p className="text-sm text-[var(--muted)]">Loading reviewers...</p>
+                    )}
+                    {!loadingReviewers && reviewers.length === 0 && (
+                      <p className="text-sm text-[var(--muted)]">No reviewers are available yet.</p>
+                    )}
+                    {reviewers.map((reviewer) => (
                       <button
                         key={reviewer.id}
+                        type="button"
                         onClick={() => setFormData({ ...formData, reviewerId: reviewer.id })}
                         className={cn(
                           'w-full p-4 border rounded-md text-left transition-all',
@@ -134,9 +188,7 @@ export function CreateRequest() {
                           <UserAvatar name={reviewer.name} />
                           <div>
                             <div className="font-medium text-sm">{reviewer.name}</div>
-                            <div className="text-xs text-[var(--muted)]">
-                              {reviewer.stats.reviews} reviews · {reviewer.stats.avgTime} avg
-                            </div>
+                            <div className="text-xs text-[var(--muted)]">{reviewer.review_count} reviews</div>
                           </div>
                           {formData.reviewerId === reviewer.id && (
                             <div className="ml-auto w-5 h-5 rounded-full bg-[var(--accent)] flex items-center justify-center">
@@ -144,13 +196,9 @@ export function CreateRequest() {
                             </div>
                           )}
                         </div>
-                        <div className="flex gap-1.5 flex-wrap">
-                          {reviewer.languages.map((lang) => (
-                            <span key={lang} className="text-[10px] px-2 py-0.5 bg-[var(--secondary)] border border-border rounded font-mono-display text-[var(--muted)]">
-                              {lang}
-                            </span>
-                          ))}
-                        </div>
+                        <span className="text-[10px] px-2 py-0.5 bg-[var(--secondary)] border border-border rounded font-mono-display text-[var(--muted)]">
+                          {reviewer.role}
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -159,9 +207,10 @@ export function CreateRequest() {
                 <div className="space-y-2">
                   <Label>Urgency</Label>
                   <div className="flex gap-2">
-                    {['low', 'normal', 'high'].map((urgency) => (
+                    {urgencies.map((urgency) => (
                       <button
                         key={urgency}
+                        type="button"
                         onClick={() => setFormData({ ...formData, urgency })}
                         className={cn(
                           'px-4 py-2 border rounded-md text-sm capitalize transition-all font-mono-display',
@@ -178,7 +227,6 @@ export function CreateRequest() {
               </div>
             )}
 
-            {/* Navigation */}
             <div className="flex items-center justify-between mt-8 pt-6 border-t border-border">
               <Button
                 onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
@@ -191,6 +239,7 @@ export function CreateRequest() {
               {currentStep < 2 ? (
                 <Button
                   onClick={() => setCurrentStep(currentStep + 1)}
+                  disabled={!canContinue}
                   className="bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90 border-0"
                 >
                   Next
@@ -198,12 +247,12 @@ export function CreateRequest() {
                 </Button>
               ) : (
                 <Button
-                  onClick={() => navigate('/my-requests')}
-                  disabled={!formData.reviewerId}
+                  onClick={handleSubmit}
+                  disabled={!formData.reviewerId || submitting}
                   className="bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90 border-0 disabled:opacity-40"
                 >
                   <Check className="w-4 h-4" />
-                  Submit Request
+                  {submitting ? 'Submitting...' : 'Submit Request'}
                 </Button>
               )}
             </div>

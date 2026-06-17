@@ -16,7 +16,6 @@ import {
   TrendingUp,
 } from 'lucide-react'
 
-/* ── Mock data ───────────────────────────────────────────────────── */
 const mockStats = [
   { label: 'Total Users',    value: '142',  icon: Users,        color: 'text-blue-400',   bg: 'bg-blue-500/10' },
   { label: 'Total Requests', value: '584',  icon: FileCode,     color: 'text-yellow-400', bg: 'bg-yellow-500/10' },

@@ -1,7 +1,5 @@
-// backend/src/config/initDb.js
-// Run with:  node src/config/initDb.js
-require('dotenv').config({ path: '../../.env' })
-
+// src/config/initDb.js
+require('dotenv').config()
 const { pool } = require('./db')
 
 const schema = `

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { AppSidebar } from '../components/shared/AppSidebar'
 import { StatusBadge } from '../components/shared/Statusbadge'
@@ -8,21 +8,38 @@ import { EmptyState } from '../components/shared/Emptystate'
 import { Button } from '../components/ui/button'
 import { FileCode, Plus, MessageSquare } from 'lucide-react'
 import { cn } from '../components/ui/utils'
-
-const mockRequests = [
-  { id: 1, title: 'React hooks optimization', language: 'typescript', reviewer: { name: 'Sarah Chen', avatar: '' }, status: 'in-review' as const, date: '2 hours ago', comments: 3 },
-  { id: 2, title: 'Authentication middleware', language: 'javascript', reviewer: { name: 'Mike Johnson', avatar: '' }, status: 'completed' as const, date: '1 day ago', comments: 7 },
-  { id: 3, title: 'Database query performance', language: 'sql', reviewer: null, status: 'pending' as const, date: '3 hours ago', comments: 0 },
-  { id: 4, title: 'API endpoint validation', language: 'typescript', reviewer: { name: 'Emma Davis', avatar: '' }, status: 'completed' as const, date: '2 days ago', comments: 5 },
-  { id: 5, title: 'State management refactor', language: 'typescript', reviewer: null, status: 'pending' as const, date: '5 hours ago', comments: 0 },
-]
+import { requestApi } from '../../api/requests'
+import type { ReviewRequest } from '../../api/types'
+import { countValue, formatRelativeTime } from '../utils/format'
 
 type FilterType = 'all' | 'pending' | 'in-review' | 'completed'
 
 export function MyRequests() {
   const [filter, setFilter] = useState<FilterType>('all')
+  const [requests, setRequests] = useState<ReviewRequest[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
-  const filtered = mockRequests.filter((r) => filter === 'all' || r.status === filter)
+  useEffect(() => {
+    let active = true
+
+    requestApi.mine()
+      .then(({ requests }) => {
+        if (active) setRequests(requests)
+      })
+      .catch((err) => {
+        if (active) setError(err instanceof Error ? err.message : 'Unable to load requests')
+      })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const filtered = requests.filter((r) => filter === 'all' || r.status === filter)
 
   const filterLabels: Record<FilterType, string> = {
     all: 'All',
@@ -68,7 +85,12 @@ export function MyRequests() {
             ))}
           </div>
 
-          {filtered.length === 0 ? (
+          {error && <div className="mb-4 text-sm text-red-400">{error}</div>}
+          {loading ? (
+            <div className="bg-[var(--surface)] border border-border rounded-md p-4 text-sm text-[var(--muted)]">
+              Loading requests...
+            </div>
+          ) : filtered.length === 0 ? (
             <EmptyState
               icon={FileCode}
               title="No requests yet"
@@ -97,12 +119,12 @@ export function MyRequests() {
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--muted)]">
                       <LanguageChip language={req.language} />
-                      {req.reviewer && <UserAvatar name={req.reviewer.name} size="sm" />}
-                      <span>{req.date}</span>
-                      {req.comments > 0 && (
+                      {req.reviewer_name && <UserAvatar name={req.reviewer_name} size="sm" />}
+                      <span>{formatRelativeTime(req.created_at)}</span>
+                      {countValue(req.comment_count) > 0 && (
                         <span className="flex items-center gap-1">
                           <MessageSquare className="w-3 h-3" />
-                          {req.comments}
+                          {countValue(req.comment_count)}
                         </span>
                       )}
                     </div>
@@ -132,22 +154,22 @@ export function MyRequests() {
                       </td>
                       <td className="px-4 py-3.5"><LanguageChip language={req.language} /></td>
                       <td className="px-4 py-3.5">
-                        {req.reviewer ? (
+                        {req.reviewer_name ? (
                           <div className="flex items-center gap-2">
-                            <UserAvatar name={req.reviewer.name} size="sm" />
-                            <span className="text-xs text-[var(--muted)]">{req.reviewer.name}</span>
+                            <UserAvatar name={req.reviewer_name} size="sm" />
+                            <span className="text-xs text-[var(--muted)]">{req.reviewer_name}</span>
                           </div>
                         ) : (
                           <span className="text-xs text-[var(--muted)]">Unassigned</span>
                         )}
                       </td>
                       <td className="px-4 py-3.5"><StatusBadge status={req.status} size="sm" /></td>
-                      <td className="px-4 py-3.5 text-xs text-[var(--muted)]">{req.date}</td>
+                      <td className="px-4 py-3.5 text-xs text-[var(--muted)]">{formatRelativeTime(req.created_at)}</td>
                       <td className="px-4 py-3.5">
-                        {req.comments > 0 ? (
+                        {countValue(req.comment_count) > 0 ? (
                           <span className="flex items-center gap-1.5 text-xs text-[var(--muted)]">
                             <MessageSquare className="w-3.5 h-3.5" />
-                            {req.comments}
+                            {countValue(req.comment_count)}
                           </span>
                         ) : (
                           <span className="text-xs text-[var(--muted)]">—</span>
