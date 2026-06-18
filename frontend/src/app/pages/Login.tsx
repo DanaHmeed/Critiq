@@ -1,31 +1,33 @@
 // frontend/src/app/pages/Login.tsx
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router'
-import { Button } from '../components/ui/button'
-import { Input } from '../components/ui/input'
-import { Label } from '../components/ui/label'
-import { useAuth } from '../context/AuthContext'
-import { Github, Loader2 } from 'lucide-react'
+import { useState } from "react";
+import { Link, useNavigate } from "react-router";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { useAuth } from "../context/AuthContext";
+import { Github, Loader2 } from "lucide-react";
 
 export function Login() {
-  const navigate = useNavigate()
-  const { login } = useAuth()
-  const [email,    setEmail]    = useState('')
-  const [password, setPassword] = useState('')
-  const [error,    setError]    = useState('')
-  const [loading,  setLoading]  = useState(false)
+  const navigate = useNavigate();
+  const { login } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
+    e.preventDefault();
+    setError("");
+    setLoading(true);
     try {
-      await login(email, password)
-      navigate('/dashboard')
+      await login(email, password);
+      navigate("/dashboard");
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Invalid email or password')
+      setError(
+        err instanceof Error ? err.message : "Invalid email or password",
+      );
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -63,9 +65,12 @@ export function Login() {
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
-                <a href="#" className="text-xs text-[var(--muted)] hover:text-[var(--accent)] transition-colors">
+                <Link
+                  to="/forgot-password"
+                  className="text-xs text-[var(--muted)] hover:text-[var(--accent)] transition-colors"
+                >
                   Forgot password?
-                </a>
+                </Link>
               </div>
               <Input
                 id="password"
@@ -83,7 +88,11 @@ export function Login() {
               disabled={loading}
               className="w-full bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90 border-0 disabled:opacity-60"
             >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Sign in'}
+              {loading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                "Sign in"
+              )}
             </Button>
           </form>
 
@@ -92,21 +101,34 @@ export function Login() {
               <div className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center">
-              <span className="bg-[var(--surface)] px-3 text-xs text-[var(--muted)]">Or continue with</span>
+              <span className="bg-[var(--surface)] px-3 text-xs text-[var(--muted)]">
+                Or continue with
+              </span>
             </div>
           </div>
-
-          <Button type="button" variant="outline" className="w-full">
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            onClick={() => {
+              window.location.href = "http://localhost:5000/api/auth/github";
+            }}
+          >
             <Github className="w-4 h-4" />
             GitHub
           </Button>
 
           <p className="mt-6 text-center text-sm text-[var(--muted)]">
-            Don't have an account?{' '}
-            <Link to="/register" className="text-[var(--accent)] hover:underline">Sign up</Link>
+            Don't have an account?{" "}
+            <Link
+              to="/register"
+              className="text-[var(--accent)] hover:underline"
+            >
+              Sign up
+            </Link>
           </p>
         </div>
       </div>
     </div>
-  )
+  );
 }

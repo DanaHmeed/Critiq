@@ -4,7 +4,9 @@ const helmet     = require('helmet')
 const rateLimit  = require('express-rate-limit')
 
 const authRoutes        = require('./routes/auth.routes')
+const passwordResetRoutes = require('./routes/passwordReset.routes')
 const requestRoutes     = require('./routes/request.routes')
+
 const commentRoutes     = require('./routes/comment.routes')
 const userRoutes        = require('./routes/user.routes')
 const notifRoutes       = require('./routes/notif.routes')
@@ -45,6 +47,7 @@ app.get('/api/health', (_req, res) => {
 
 // ── Routes ───────────────────────────────────────
 app.use('/api/auth',     authRoutes)
+app.use('/api/auth',     passwordResetRoutes)
 app.use('/api/requests', requestRoutes)
 app.use('/api/comments', commentRoutes)
 app.use('/api/users',    userRoutes)

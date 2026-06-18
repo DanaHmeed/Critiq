@@ -1,7 +1,7 @@
 // backend/src/routes/auth.routes.js
 const express = require('express')
 const { body } = require('express-validator')
-const { register, login, getMe } = require('../controllers/auth.controller')
+const { register, login, getMe, githubLogin, githubCallback } = require('../controllers/auth.controller')
 const { protect } = require('../middleware/auth')
 
 const router = express.Router()
@@ -27,5 +27,8 @@ router.post(
 )
 
 router.get('/me', protect, getMe)
+
+router.get('/github', githubLogin)
+router.get('/github/callback', githubCallback)
 
 module.exports = router

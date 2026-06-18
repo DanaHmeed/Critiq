@@ -15,7 +15,6 @@ import {
 import { useTheme } from "../../hooks/useTheme"
 import { cn } from '../ui/utils'
 import { useAuth } from '../../context/AuthContext'
-
 interface SidebarLinkProps {
   to: string
   icon: React.ReactNode
@@ -28,7 +27,7 @@ function SidebarLink({ to, icon, label, active, onClick }: SidebarLinkProps) {
   return (
     <Link
       to={to}
-      onClick={onClick}
+      onClick={onClick} 
       className={cn(
         'flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors',
         active
@@ -38,6 +37,7 @@ function SidebarLink({ to, icon, label, active, onClick }: SidebarLinkProps) {
     >
       {icon}
       <span>{label}</span>
+      
     </Link>
   )
 }
@@ -105,10 +105,13 @@ export function AppSidebar({ isAdmin = false }: AppSidebarProps) {
   const sidebarContent = (
     <div className="flex flex-col h-full">
       {/* Logo */}
+      
       <div className="p-6 border-b border-[var(--sidebar-border)]">
+        <Link to ="/Landing">
         <h1 className="text-xl font-mono-display text-[var(--sidebar-foreground)] tracking-tight">
           Critiq
         </h1>
+        </Link>
       </div>
 
       {/* Nav */}
