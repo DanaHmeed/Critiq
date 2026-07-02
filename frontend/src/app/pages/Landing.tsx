@@ -52,7 +52,32 @@ const features = [
       "Request reviews from specific developers. Track average response times and review quality scores.",
   },
 ];
+function CritiqLogo() {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
+  return (
+    <Link to="/" className="flex items-center gap-2.5">
+  {(() => {
+    const accent = isDark ? "#7B6AEE" : "#4535C1";
+    return (
+      <svg width="30" height="30" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+        <rect width="40" height="40" rx="9"  />
+        <path
+          d="M26.5 13.5C24.7 11.9 22.4 11 20 11C14.5 11 10 15.5 10 21C10 26.5 14.5 31 20 31C22.4 31 24.7 30.1 26.5 28.5"
+          stroke={accent} strokeWidth="3.2" strokeLinecap="round" fill="none"
+        />
+        <line x1="24" y1="18.5" x2="29.5" y2="18.5" stroke={accent} strokeWidth="2.2" strokeLinecap="round" />
+        <line x1="24" y1="23.5" x2="29.5" y2="23.5" stroke={accent} strokeWidth="2.2" strokeLinecap="round" />
+      </svg>
+    );
+  })()}
+  <span className="text-base font-mono-display tracking-tight">
+    Criti<span style={{ color: isDark ? "#7B6AEE" : "#4535C1" }}>q</span>
+  </span>
+</Link>
+  );
+}
 /* ─── Theme Toggle ───────────────────────────────────────────────── */
 function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
@@ -127,8 +152,7 @@ export function Landing() {
       {/* Header */}
       <header className="border-b border-border bg-[var(--surface)] sticky top-0 z-40 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-4 flex items-center justify-between">
-          <h1 className="text-xl font-mono-display">Critiq</h1>
-
+          <CritiqLogo />
           <div className="flex items-center gap-3 sm:gap-4">
             {/* Theme toggle */}
             <ThemeToggle />
