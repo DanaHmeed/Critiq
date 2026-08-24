@@ -1,5 +1,5 @@
-import { Link } from "react-router";
-import { CodeBlock } from "../components/shared/CodeBlock";
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router'
 import {
   Code,
   MessageSquare,
@@ -7,184 +7,123 @@ import {
   Zap,
   Github,
   ArrowRight,
-  Sun,
-  Moon,
-} from "lucide-react";
-import { Button } from "../components/ui/button";
-import { useTheme } from "../hooks/useTheme";
-import { useNavigate } from "react-router";
-import { LogOut, LayoutDashboard } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
-const sampleCode = `function calculateFibonacci(n: number): number {
-  if (n <= 1) return n;
-  return calculateFibonacci(n - 1) + calculateFibonacci(n - 2);
-}
+  Sparkles,
+  LayoutDashboard,
+  CheckCircle2,
+  GitPullRequest,
+  Check,
+  Eye,
+  Command,
+  ShieldCheck,
+  ChevronRight,
+  Layers,
+} from 'lucide-react'
+import { Button } from '../components/ui/button'
+import { useAuth } from '../context/AuthContext'
+import { CodeBlock, type CodeComment } from '../components/shared/CodeBlock'
+import { StatusBadge } from '../components/shared/Statusbadge'
+import { LanguageChip } from '../components/shared/Languagechip'
+import { UserAvatar } from '../components/shared/Useravatar'
 
-const result = calculateFibonacci(10);`;
+const demoCode = `// Authenticate and dispatch webhook events
+export async function dispatchReviewEvent(payload: ReviewEvent): Promise<Result> {
+  const token = await verifySignature(payload.signature);
+  if (!token.valid) {
+    throw new AuthenticationError("Invalid webhook signature");
+  }
 
-const sampleComments = [
-  {
-    line: 3,
-    author: "Sarah Chen",
-    avatar: "",
-    text: "Consider memoization here — exponential time complexity O(2ⁿ) will hurt at scale.",
-    timestamp: "2 hours ago",
-  },
-];
-
-const features = [
-  {
-    icon: Code,
-    title: "Line-by-line feedback",
-    description:
-      "Comment on specific lines with full context. Amber indicators show exactly where reviewers left notes.",
-  },
-  {
-    icon: MessageSquare,
-    title: "Threaded discussions",
-    description:
-      "Each comment anchors to its line number. Track conversations about specific implementation details.",
-  },
-  {
-    icon: Users,
-    title: "Peer review network",
-    description:
-      "Request reviews from specific developers. Track average response times and review quality scores.",
-  },
-];
-function CritiqLogo() {
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
-
-  return (
-    <Link to="/" className="flex items-center gap-2.5">
-  {(() => {
-    const accent = isDark ? "#7B6AEE" : "#4535C1";
-    return (
-      <svg width="30" height="30" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-        <rect width="40" height="40" rx="9"  />
-        <path
-          d="M26.5 13.5C24.7 11.9 22.4 11 20 11C14.5 11 10 15.5 10 21C10 26.5 14.5 31 20 31C22.4 31 24.7 30.1 26.5 28.5"
-          stroke={accent} strokeWidth="3.2" strokeLinecap="round" fill="none"
-        />
-        <line x1="24" y1="18.5" x2="29.5" y2="18.5" stroke={accent} strokeWidth="2.2" strokeLinecap="round" />
-        <line x1="24" y1="23.5" x2="29.5" y2="23.5" stroke={accent} strokeWidth="2.2" strokeLinecap="round" />
-      </svg>
-    );
-  })()}
-  <span className="text-base font-mono-display tracking-tight">
-    Criti<span style={{ color: isDark ? "#7B6AEE" : "#4535C1" }}>q</span>
-  </span>
-</Link>
-  );
-}
-/* ─── Theme Toggle ───────────────────────────────────────────────── */
-function ThemeToggle() {
-  const { theme, toggleTheme } = useTheme();
-  const isDark = theme === "dark";
-
-  return (
-    <button
-      onClick={toggleTheme}
-      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-      className="relative flex items-center w-[72px] h-[36px] rounded-full p-1 transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-      style={{
-        background: isDark ? "#1a1917" : "#e2e0db",
-        border: "1px solid var(--border)",
-      }}
-    >
-      {/* Sun icon — left side */}
-      <span
-        className="absolute left-2.5 flex items-center justify-center transition-opacity duration-200"
-        style={{ opacity: isDark ? 0.45 : 1 }}
-      >
-        <Sun
-          className="w-4 h-4"
-          style={{ color: isDark ? "#8a8880" : "#d97b4f" }}
-          strokeWidth={1.8}
-        />
-      </span>
-
-      {/* Moon icon — right side */}
-      <span
-        className="absolute right-2.5 flex items-center justify-center transition-opacity duration-200"
-        style={{ opacity: isDark ? 1 : 0.45 }}
-      >
-        <Moon
-          className="w-[14px] h-[14px]"
-          style={{ color: isDark ? "#ffffff" : "#8a8880" }}
-          strokeWidth={1.8}
-        />
-      </span>
-
-      {/* Sliding pill */}
-      <span
-        className="absolute top-[3px] w-[28px] h-[28px] rounded-full flex items-center justify-center shadow-md transition-all duration-300 ease-in-out"
-        style={{
-          left: isDark ? "calc(100% - 31px)" : "3px",
-          background: isDark ? "#2563eb" : "#ffffff",
-          boxShadow: isDark
-            ? "0 2px 8px rgba(37,99,235,0.5)"
-            : "0 2px 6px rgba(0,0,0,0.15)",
-        }}
-      >
-        {isDark ? (
-          <Moon className="w-3.5 h-3.5 text-white" strokeWidth={2} />
-        ) : (
-          <Sun className="w-3.5 h-3.5 text-[#d97b4f]" strokeWidth={2} />
-        )}
-      </span>
-    </button>
-  );
-}
+  const queue = await getNotificationQueue(payload.reviewerId);
+  return queue.enqueue({
+    type: payload.eventType,
+    timestamp: Date.now(),
+    priority: payload.urgency === "high" ? 1 : 3,
+  });
+}`
 
 export function Landing() {
-  const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const navigate = useNavigate()
+  const { user, logout } = useAuth()
+  const [activeTab, setActiveTab] = useState<'typescript' | 'rust' | 'go'>('typescript')
+  const [sandboxComments, setSandboxComments] = useState<CodeComment[]>([
+    {
+      line: 4,
+      author: 'Elena Rostova',
+      text: 'Good catch on the signature verification before queueing.',
+      timestamp: '10m ago',
+    },
+    {
+      line: 8,
+      author: 'Marcus Vance',
+      text: 'Should we add fallback retry logic if the queue is saturated?',
+      timestamp: '2m ago',
+    },
+  ])
+  const [selectedLine, setSelectedLine] = useState<number | null>(null)
+  const [newCommentText, setNewCommentText] = useState('')
 
-  function handleLogout() {
-    logout();
-    navigate("/");
+  const handleAddSandboxComment = () => {
+    if (!newCommentText.trim() || !selectedLine) return
+    setSandboxComments((prev) => [
+      ...prev,
+      {
+        line: selectedLine,
+        author: user?.name || 'You (Developer)',
+        text: newCommentText,
+        timestamp: 'Just now',
+      },
+    ])
+    setNewCommentText('')
+    setSelectedLine(null)
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-[var(--surface)] sticky top-0 z-40 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-4 flex items-center justify-between">
-          <CritiqLogo />
-          <div className="flex items-center gap-3 sm:gap-4">
-            {/* Theme toggle */}
-            <ThemeToggle />
+    <div className="min-h-screen bg-[#08090a] text-[#f7f8f8] selection:bg-[#5e6ad2]/30 selection:text-white relative overflow-hidden">
+      {/* Top Ambient Glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[500px] pointer-events-none linear-glow -z-10" />
 
+      {/* Navigation Header */}
+      <header className="sticky top-0 z-50 linear-glass">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-2.5 group">
+            <span className="text-m font-semibold tracking-tight text-white flex items-center gap-1">
+              Critiq
+              <span className="text-[10px] text-[#8a8f98] font-mono font-normal ml-1 px-1.5 py-0.2 rounded bg-white/[0.06] border border-white/[0.08]">
+                v1.0
+              </span>
+            </span>
+          </Link>
+
+          <nav className="hidden md:flex items-center gap-6 text-xs text-[#8a8f98]">
+            <a href="#features" className="hover:text-white transition-colors">Features</a>
+            <a href="#showcase" className="hover:text-white transition-colors">Experience</a>
+            <a href="#sandbox" className="hover:text-white transition-colors">Sandbox</a>
+            <a href="#workflow" className="hover:text-white transition-colors">Workflow</a>
+          </nav>
+
+          <div className="flex items-center gap-2.5">
             {user ? (
-              <>
+              <div className="flex items-center gap-2">
                 <Link to="/dashboard">
-                  <Button variant="ghost" size="sm">
-                    <LayoutDashboard className="w-4 h-4" />
+                  <Button variant="secondary" size="sm" className="gap-1.5">
+                    <LayoutDashboard className="w-3.5 h-3.5 text-[#5e6ad2]" />
                     Dashboard
                   </Button>
                 </Link>
-
-                <Button variant="outline" size="sm" onClick={handleLogout}>
-                  <LogOut className="w-4 h-4" />
-                  Logout
+                <Button variant="ghost" size="sm" onClick={() => logout()}>
+                  Sign out
                 </Button>
-              </>
+              </div>
             ) : (
               <>
                 <Link to="/login">
-                  <Button variant="ghost" size="sm">
-                    Login
+                  <Button variant="ghost" size="sm" className="text-xs">
+                    Log in
                   </Button>
                 </Link>
-
                 <Link to="/register">
-                  <Button
-                    size="sm"
-                    className="bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90 border-0"
-                  >
+                  <Button variant="primary" size="sm" className="text-xs">
                     Start reviewing
+                    <ArrowRight className="w-3 h-3 ml-1" />
                   </Button>
                 </Link>
               </>
@@ -193,127 +132,297 @@ export function Landing() {
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-8 pt-16 sm:pt-24 pb-12">
-        <div className="max-w-4xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[var(--accent)]/30 bg-[var(--accent)]/10 text-[var(--accent)] text-xs font-mono-display mb-6">
-            <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)]" />
-            Peer Code Reviews
+      {/* Hero Section */}
+      <section className="relative pt-20 sm:pt-28 pb-16 px-4 sm:px-6 max-w-5xl mx-auto text-center">
+        {/* Release Pill */}
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-[11px] text-[#8a8f98] mb-8 hover:border-white/[0.18] transition-colors cursor-pointer shadow-sm">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#5e6ad2] animate-pulse" />
+          <span className="text-[#d0d6e0] font-medium">Critiq Engine 2.0</span>
+          <span className="text-[#525660]">·</span>
+          <span>Line-anchored code reviews built for speed</span>
+          <ChevronRight className="w-3 h-3 text-[#8a8f98]" />
+        </div>
+
+        {/* Hero Title */}
+        <h1 className="text-4xl sm:text-6xl font-semibold tracking-tight text-white max-w-4xl mx-auto leading-[1.1] mb-6">
+          The system for <br />
+          <span className="bg-gradient-to-r from-[#f7f8f8] via-[#d0d6e0] to-[#8a8f98] bg-clip-text text-transparent">
+            peer code reviews.
+          </span>
+        </h1>
+
+        {/* Hero Subtitle */}
+        <p className="text-sm sm:text-base text-[#8a8f98] max-w-2xl mx-auto leading-relaxed mb-10">
+          Critiq is purpose-built for engineering teams who take code quality seriously.
+          Pinpoint line comments, assign qualified peers, and close review cycles in hours, not days.
+        </p>
+
+        {/* CTA Buttons */}
+        <div className="flex flex-wrap items-center justify-center gap-3 mb-16">
+          <Link to="/register">
+            <Button variant="primary" size="lg" className="gap-2 text-xs font-medium">
+              Start reviewing free
+              <span className="kbd-badge bg-white/20 text-white border-white/30 text-[10px]">
+                ↵
+              </span>
+            </Button>
+          </Link>
+          <Link to="/login">
+            <Button variant="secondary" size="lg" className="gap-2 text-xs font-medium">
+              <Github className="w-3.5 h-3.5" />
+              Continue with GitHub
+            </Button>
+          </Link>
+        </div>
+
+        {/* Hero Preview: Interactive Code Studio */}
+        <div id="showcase" className="relative mt-8 rounded-2xl p-1.5 bg-gradient-to-b from-white/[0.12] to-white/[0.02] shadow-[0_20px_80px_rgba(0,0,0,0.8)]">
+          <div className="rounded-xl bg-[#0b0c10] border border-white/[0.06] overflow-hidden text-left">
+            {/* Window Topbar */}
+            <div className="px-4 py-3 bg-[#0e0f14] border-b border-white/[0.06] flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#f43f5e]/80" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b]/80" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#22c55e]/80" />
+                </div>
+                <span className="text-xs font-mono text-[#8a8f98] ml-2">
+                  critiq / auth-service / <span className="text-white">webhook-dispatcher.ts</span>
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <StatusBadge status="in-review" size="sm" />
+                <LanguageChip language="TypeScript" />
+              </div>
+            </div>
+
+            {/* Code Body */}
+            <div className="p-4 sm:p-6 bg-[#08090a]">
+              <CodeBlock
+                code={demoCode}
+                language="typescript"
+                comments={sandboxComments}
+                showLineNumbers={true}
+                maxHeight="none"
+              />
+            </div>
           </div>
-          <h1 className="font-mono-display mb-6 text-foreground">
-            Your code,
-            <br />
-            reviewed.
-          </h1>
-          <p className="text-base sm:text-lg text-[var(--muted)] mb-10 max-w-2xl leading-relaxed">
-            A developer-focused platform for peer code reviews. Submit snippets,
-            request feedback, and leave inline comments on specific lines.
+        </div>
+      </section>
+
+      {/* Bento Grid Feature Pillars */}
+      <section id="features" className="py-24 px-4 sm:px-6 max-w-6xl mx-auto border-t border-white/[0.06]">
+        <div className="mb-14 text-center max-w-xl mx-auto">
+          <div className="text-[11px] font-mono uppercase tracking-widest text-[#5e6ad2] mb-2 font-medium">
+            Core Philosophy
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight">
+            Engineered for velocity & precision
+          </h2>
+          <p className="text-xs sm:text-sm text-[#8a8f98] mt-2">
+            Every feature is crafted to eliminate friction and focus on what matters: the code.
           </p>
-          <div className="flex flex-wrap gap-3">
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Bento Card 1 */}
+          <div className="md:col-span-2 p-6 rounded-2xl linear-panel flex flex-col justify-between group">
+            <div>
+              <div className="w-9 h-9 rounded-xl bg-[#5e6ad2]/10 border border-[#5e6ad2]/20 flex items-center justify-center mb-4 text-[#5e6ad2]">
+                <MessageSquare className="w-4 h-4" />
+              </div>
+              <h3 className="text-base font-semibold text-white mb-2">
+                Line-Anchored Discussions
+              </h3>
+              <p className="text-xs text-[#8a8f98] leading-relaxed max-w-md">
+                Pin comments directly to specific line numbers. Reviewers leave context-rich feedback without confusing PR thread sprawl.
+              </p>
+            </div>
+            <div className="mt-6 p-3 rounded-lg bg-[#0b0c10] border border-white/[0.06] font-mono text-[11px] text-[#d0d6e0] flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                Line 4: "Consider adding cache fallback here"
+              </span>
+              <span className="text-[#8a8f98]">Elena R. · 2m ago</span>
+            </div>
+          </div>
+
+          {/* Bento Card 2 */}
+          <div className="p-6 rounded-2xl linear-panel flex flex-col justify-between group">
+            <div>
+              <div className="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center mb-4 text-sky-400">
+                <Users className="w-4 h-4" />
+              </div>
+              <h3 className="text-base font-semibold text-white mb-2">
+                Peer Reviewer Routing
+              </h3>
+              <p className="text-xs text-[#8a8f98] leading-relaxed">
+                Directly route requests to specialized peers based on language tags and review history.
+              </p>
+            </div>
+            <div className="mt-6 flex items-center gap-2">
+              <UserAvatar name="Alex Rivera" size="sm" online />
+              <UserAvatar name="Sarah Chen" size="sm" online />
+              <UserAvatar name="David Kim" size="sm" />
+              <span className="text-[10px] text-[#8a8f98] font-mono ml-1">+12 Active Reviewers</span>
+            </div>
+          </div>
+
+          {/* Bento Card 3 */}
+          <div className="p-6 rounded-2xl linear-panel flex flex-col justify-between group">
+            <div>
+              <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-4 text-amber-400">
+                <Command className="w-4 h-4" />
+              </div>
+              <h3 className="text-base font-semibold text-white mb-2">
+                Keyboard-First Flow
+              </h3>
+              <p className="text-xs text-[#8a8f98] leading-relaxed">
+                Navigate review requests, jump to line comments, and update statuses using crisp shortcuts.
+              </p>
+            </div>
+            <div className="mt-6 flex items-center gap-2">
+              <span className="kbd-badge">C</span>
+              <span className="text-[10px] text-[#8a8f98]">New Request</span>
+              <span className="kbd-badge ml-2">G D</span>
+              <span className="text-[10px] text-[#8a8f98]">Dashboard</span>
+            </div>
+          </div>
+
+          {/* Bento Card 4 */}
+          <div className="md:col-span-2 p-6 rounded-2xl linear-panel flex flex-col justify-between group">
+            <div>
+              <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-4 text-emerald-400">
+                <Zap className="w-4 h-4" />
+              </div>
+              <h3 className="text-base font-semibold text-white mb-2">
+                Turnaround Time & Velocity Tracking
+              </h3>
+              <p className="text-xs text-[#8a8f98] leading-relaxed max-w-md">
+                Monitor response times, completed reviews, and quality scores in real-time across your workspace.
+              </p>
+            </div>
+            <div className="mt-6 grid grid-cols-3 gap-3">
+              <div className="p-3 rounded-lg bg-[#0b0c10] border border-white/[0.06]">
+                <div className="text-lg font-mono font-medium text-white">&lt; 1.5h</div>
+                <div className="text-[10px] text-[#8a8f98]">Avg Turnaround</div>
+              </div>
+              <div className="p-3 rounded-lg bg-[#0b0c10] border border-white/[0.06]">
+                <div className="text-lg font-mono font-medium text-white">99.4%</div>
+                <div className="text-[10px] text-[#8a8f98]">Resolution Rate</div>
+              </div>
+              <div className="p-3 rounded-lg bg-[#0b0c10] border border-white/[0.06]">
+                <div className="text-lg font-mono font-medium text-white">100%</div>
+                <div className="text-[10px] text-[#8a8f98]">Inline Accuracy</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Interactive Sandbox Section */}
+      <section id="sandbox" className="py-20 px-4 sm:px-6 max-w-5xl mx-auto border-t border-white/[0.06]">
+        <div className="text-center mb-10">
+          <div className="text-[11px] font-mono uppercase tracking-widest text-[#5e6ad2] mb-2 font-medium">
+            Interactive Demo
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight">
+            Try the inline review experience
+          </h2>
+          <p className="text-xs sm:text-sm text-[#8a8f98] mt-2">
+            Hover over any line below and click the comment icon to leave a test note.
+          </p>
+        </div>
+
+        <div className="rounded-2xl p-1 bg-gradient-to-b from-white/[0.1] to-transparent">
+          <div className="p-4 sm:p-6 rounded-xl bg-[#0b0c10] border border-white/[0.06]">
+            <CodeBlock
+              code={demoCode}
+              language="typescript"
+              comments={sandboxComments}
+              onAddComment={(line) => setSelectedLine(line)}
+              highlightedLine={selectedLine}
+              maxHeight="none"
+            />
+
+            {selectedLine && (
+              <div className="mt-4 p-4 rounded-xl bg-[#12131a] border border-[#5e6ad2]/40 shadow-lg animate-in fade-in slide-in-from-top-2">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="w-2 h-2 rounded-full bg-[#5e6ad2]" />
+                  <span className="text-xs font-mono text-[#8a8f98]">
+                    Leaving note on Line {selectedLine}
+                  </span>
+                </div>
+                <textarea
+                  value={newCommentText}
+                  onChange={(e) => setNewCommentText(e.target.value)}
+                  placeholder="Type your peer review comment..."
+                  className="w-full h-20 p-2.5 rounded-lg bg-[#08090a] border border-white/[0.08] text-xs text-[#f7f8f8] placeholder:text-[#525660] focus:outline-none focus:border-[#5e6ad2] resize-none mb-3"
+                />
+                <div className="flex items-center gap-2">
+                  <Button variant="primary" size="sm" onClick={handleAddSandboxComment}>
+                    Submit comment
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => setSelectedLine(null)}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* Bottom CTA Banner */}
+      <section className="py-24 px-4 sm:px-6 max-w-5xl mx-auto border-t border-white/[0.06] text-center">
+        <div className="relative rounded-3xl p-8 sm:p-14 bg-gradient-to-b from-[#12131a] to-[#0a0b0e] border border-white/[0.1] overflow-hidden shadow-[0_20px_80px_rgba(0,0,0,0.8)]">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-32 bg-[#5e6ad2]/20 blur-3xl pointer-events-none" />
+
+          <h2 className="text-3xl sm:text-4xl font-semibold text-white tracking-tight mb-4">
+            Level up your code review culture today
+          </h2>
+          <p className="text-xs sm:text-sm text-[#8a8f98] max-w-md mx-auto mb-8 leading-relaxed">
+            Free forever for individual developers and small peer teams. Experience the clarity of modern reviews.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3">
             <Link to="/register">
-              <Button className="bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90 border-0">
+              <Button variant="primary" size="lg" className="text-xs font-medium">
                 Get started free
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-3.5 h-3.5 ml-1" />
               </Button>
             </Link>
             <Link to="/login">
-              <Button variant="outline">Sign in</Button>
+              <Button variant="secondary" size="lg" className="text-xs font-medium">
+                Sign in to workspace
+              </Button>
             </Link>
           </div>
-        </div>
-
-        {/* Code preview */}
-        <div className="mt-14 max-w-3xl">
-          <CodeBlock
-            code={sampleCode}
-            language="typescript"
-            comments={sampleComments}
-            maxHeight="none"
-          />
-        </div>
-      </section>
-
-      {/* Features */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-8 py-16">
-        <div className="mb-10">
-          <p className="text-xs font-mono-display uppercase tracking-widest text-[var(--muted)] mb-3">
-            Features
-          </p>
-          <h2 className="text-foreground">Built for code quality</h2>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {features.map((f) => (
-            <div
-              key={f.title}
-              className="p-6 bg-[var(--surface)] border border-border rounded-md hover:border-[var(--accent)]/40 transition-colors"
-            >
-              <div className="w-10 h-10 rounded-md bg-[var(--secondary)] flex items-center justify-center mb-4 border border-border">
-                <f.icon className="w-5 h-5 text-[var(--accent)]" />
-              </div>
-              <h3 className="text-base font-medium mb-2 text-foreground">
-                {f.title}
-              </h3>
-              <p className="text-sm text-[var(--muted)] leading-relaxed">
-                {f.description}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-8 py-16 sm:py-24">
-        <div className="bg-[var(--surface)] border border-[var(--accent)]/20 rounded-md p-8 sm:p-14 text-center">
-          <Zap className="w-10 h-10 mx-auto mb-4 text-[var(--accent)]" />
-          <h2 className="mb-4 text-foreground">Ready to improve your code?</h2>
-          <p className="text-[var(--muted)] mb-8 max-w-md mx-auto text-sm">
-            Join developers who trust Critiq with their code reviews.
-          </p>
-          <Link to="/register">
-            <Button className="bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90 border-0">
-              Start reviewing
-              <ArrowRight className="w-4 h-4" />
-            </Button>
-          </Link>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-[var(--surface)] border-t border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-10">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-            <div>
-              <h2 className="text-base font-mono-display mb-1">Critiq</h2>
-              <p className="text-xs text-[var(--muted)]">
-                Precise code reviews for developers.
-              </p>
+      <footer className="border-t border-white/[0.06] py-12 px-4 sm:px-6 bg-[#0a0b0e]">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6 text-xs text-[#8a8f98]">
+          <div className="flex items-center gap-3">
+            <div className="w-5 h-5 rounded-md bg-[#5e6ad2] flex items-center justify-center">
+              <Sparkles className="w-3 h-3 text-white" />
             </div>
-            <div className="flex items-center gap-6">
-              <a
-                href="#"
-                className="text-sm text-[var(--muted)] hover:text-foreground transition-colors"
-              >
-                Docs
-              </a>
-              <a
-                href="#"
-                className="text-sm text-[var(--muted)] hover:text-foreground transition-colors"
-              >
-                API
-              </a>
-              <a
-                href="#"
-                className="text-[var(--muted)] hover:text-foreground transition-colors"
-              >
-                <Github className="w-4 h-4" />
-              </a>
-            </div>
+            <span className="font-semibold text-white">Critiq</span>
+            <span className="text-[#525660]">·</span>
+            <span>© 2026 Critiq Inc. All rights reserved.</span>
           </div>
-          <div className="mt-8 pt-6 border-t border-border text-xs text-[var(--muted)]">
-            © 2026 Critiq. Built for developers who care about code quality.
+
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              <span className="text-[11px] font-mono text-[#d0d6e0]">All systems operational</span>
+            </div>
+            <a href="https://github.com" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">
+              <Github className="w-4 h-4" />
+            </a>
           </div>
         </div>
       </footer>
     </div>
-  );
+  )
 }

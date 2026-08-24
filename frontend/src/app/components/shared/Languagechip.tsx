@@ -2,28 +2,29 @@ interface LanguageChipProps {
   language: string
 }
 
-const languageColors: Record<string, string> = {
-  typescript: 'text-blue-400 border-blue-500/30 bg-blue-500/10',
-  javascript: 'text-yellow-400 border-yellow-500/30 bg-yellow-500/10',
-  python: 'text-green-400 border-green-500/30 bg-green-500/10',
-  rust: 'text-orange-400 border-orange-500/30 bg-orange-500/10',
-  go: 'text-cyan-400 border-cyan-500/30 bg-cyan-500/10',
-  java: 'text-red-400 border-red-500/30 bg-red-500/10',
-  sql: 'text-purple-400 border-purple-500/30 bg-purple-500/10',
-  'node.js': 'text-green-400 border-green-500/30 bg-green-500/10',
-  react: 'text-blue-400 border-blue-500/30 bg-blue-500/10',
+const languageColors: Record<string, { text: string; bg: string; border: string; dot: string }> = {
+  typescript: { text: 'text-sky-400', bg: 'bg-sky-500/10', border: 'border-sky-500/20', dot: 'bg-sky-400' },
+  javascript: { text: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', dot: 'bg-amber-400' },
+  python: { text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', dot: 'bg-emerald-400' },
+  rust: { text: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20', dot: 'bg-orange-400' },
+  go: { text: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20', dot: 'bg-cyan-400' },
+  java: { text: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/20', dot: 'bg-rose-400' },
+  sql: { text: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20', dot: 'bg-purple-400' },
+  'node.js': { text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', dot: 'bg-emerald-400' },
+  react: { text: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20', dot: 'bg-cyan-400' },
 }
 
 export function LanguageChip({ language }: LanguageChipProps) {
-  const colorClass =
+  const conf =
     languageColors[language.toLowerCase()] ||
-    'text-[var(--muted)] border-border bg-[var(--secondary)]'
+    { text: 'text-[#8a8f98]', bg: 'bg-white/[0.04]', border: 'border-white/[0.08]', dot: 'bg-[#8a8f98]' }
 
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded border text-[10px] font-mono-display ${colorClass}`}
+      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[11px] font-mono tracking-tight font-medium ${conf.bg} ${conf.border} ${conf.text}`}
     >
-      {language}
+      <span className={`w-1 h-1 rounded-full ${conf.dot}`} />
+      <span>{language}</span>
     </span>
   )
 }

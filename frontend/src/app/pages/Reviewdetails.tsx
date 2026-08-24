@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router'
+import { useNavigate, useParams, Link } from 'react-router'
 import { AppSidebar } from '../components/shared/AppSidebar'
 import { CodeBlock, type CodeComment } from '../components/shared/CodeBlock'
 import { StatusBadge } from '../components/shared/Statusbadge'
@@ -7,7 +7,17 @@ import { UserAvatar } from '../components/shared/Useravatar'
 import { LanguageChip } from '../components/shared/Languagechip'
 import { Button } from '../components/ui/button'
 import { Textarea } from '../components/ui/textarea'
-import { ArrowLeft, CheckCircle, Eye } from 'lucide-react'
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Eye,
+  MessageSquarePlus,
+  Send,
+  Sparkles,
+  AlertCircle,
+  Clock,
+  UserCheck,
+} from 'lucide-react'
 import { requestApi } from '../../api/requests'
 import { commentApi } from '../../api/comments'
 import type { ReviewComment, ReviewRequest } from '../../api/types'
@@ -99,145 +109,214 @@ export function ReviewDetails() {
   const codeComments = comments.map(toCodeComment)
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-[#08090a] text-[#f7f8f8]">
       <AppSidebar />
 
-      <main className="flex-1 flex flex-col min-w-0">
-        <div className="border-b border-border bg-[var(--surface)] sticky top-0 z-10">
-          <div className="px-4 sm:px-6 py-3">
+      <main className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+        {/* Top Control Bar */}
+        <div className="border-b border-white/[0.06] bg-[#0c0d12] px-4 sm:px-6 py-3 shrink-0 flex items-center justify-between">
+          <div className="flex items-center gap-3 min-w-0">
             <button
-              onClick={() => navigate('/my-requests')}
-              className="flex items-center gap-2 text-xs text-[var(--muted)] hover:text-foreground mb-3 transition-colors mt-10 lg:mt-0"
+              onClick={() => navigate('/dashboard')}
+              className="p-1.5 rounded-md hover:bg-white/[0.06] text-[#8a8f98] hover:text-white transition-colors"
+              title="Back to Dashboard"
             >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              Back to Requests
+              <ArrowLeft className="w-4 h-4" />
             </button>
 
-            {loading && <p className="text-sm text-[var(--muted)]">Loading review...</p>}
-            {error && <p className="text-sm text-red-400">{error}</p>}
+            <div className="h-4 w-px bg-white/[0.08]" />
 
-            {request && (
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <h2 className="text-base sm:text-lg font-medium truncate">{request.title}</h2>
-                    <LanguageChip language={request.language} />
-                    <StatusBadge status={request.status} />
-                  </div>
-                  <p className="text-xs text-[var(--muted)] leading-relaxed max-w-xl">
-                    {request.description || 'No description provided.'}
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-3 shrink-0">
-                  <div className="flex items-center gap-2 text-sm">
-                    <UserAvatar name={request.reviewer_name || 'Unassigned'} online={Boolean(request.reviewer_name)} />
-                    <div>
-                      <div className="text-xs font-medium">{request.reviewer_name || 'Unassigned'}</div>
-                      <div className="flex items-center gap-1 text-[10px] text-[var(--muted)]">
-                        <Eye className="w-3 h-3" />
-                        Reviewing
-                      </div>
-                    </div>
-                  </div>
-                  <Button
-                    onClick={handleComplete}
-                    variant="outline"
-                    size="sm"
-                    disabled={submitting || request.status === 'completed'}
-                  >
-                    <CheckCircle className="w-3.5 h-3.5" />
-                    Complete
-                  </Button>
-                </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono text-[#8a8f98] hidden sm:inline">Request /</span>
+                <h1 className="text-sm font-medium text-white truncate max-w-sm sm:max-w-md">
+                  {request ? request.title : 'Loading...'}
+                </h1>
+                {request && <StatusBadge status={request.status} size="sm" />}
               </div>
-            )}
+            </div>
           </div>
+
+          {request && (
+            <div className="flex items-center gap-2 shrink-0">
+              <LanguageChip language={request.language} />
+              <Button
+                onClick={handleComplete}
+                variant={request.status === 'completed' ? 'outline' : 'primary'}
+                size="sm"
+                disabled={submitting || request.status === 'completed'}
+                className="gap-1.5 text-xs"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                {request.status === 'completed' ? 'Completed' : 'Mark Completed'}
+              </Button>
+            </div>
+          )}
         </div>
 
-        {request && (
-          <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-            <div className="flex-1 lg:w-[60%] p-4 sm:p-6 overflow-auto border-b lg:border-b-0 lg:border-r border-border">
-              <CodeBlock
-                code={request.code}
-                language={request.language}
-                comments={codeComments}
-                onAddComment={handleAddComment}
-                highlightedLine={selectedLine}
-                maxHeight="none"
-              />
+        {/* Loading / Error States */}
+        {loading && (
+          <div className="flex-1 flex items-center justify-center text-xs text-[#8a8f98] font-mono">
+            Loading review inspection workspace...
+          </div>
+        )}
+
+        {error && (
+          <div className="p-4 m-4 rounded-lg bg-rose-500/10 border border-rose-500/20 text-xs text-rose-400">
+            {error}
+          </div>
+        )}
+
+        {/* IDE Split View */}
+        {request && !loading && (
+          <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
+            {/* Left: Code Canvas */}
+            <div className="flex-1 lg:w-[65%] p-4 sm:p-6 overflow-y-auto scrollbar-thin border-b lg:border-b-0 lg:border-r border-white/[0.06] bg-[#08090a]">
+              <div className="max-w-4xl mx-auto space-y-4">
+                {/* Description Pill */}
+                {request.description && (
+                  <div className="p-3.5 rounded-xl bg-[#0e0f14] border border-white/[0.06] text-xs text-[#d0d6e0] leading-relaxed">
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-[#8a8f98] block mb-1">
+                      Author's Context
+                    </span>
+                    {request.description}
+                  </div>
+                )}
+
+                {/* Main Code View */}
+                <CodeBlock
+                  code={request.code}
+                  language={request.language}
+                  comments={codeComments}
+                  onAddComment={handleAddComment}
+                  highlightedLine={selectedLine}
+                  maxHeight="none"
+                />
+              </div>
             </div>
 
-            <div className="lg:w-[40%] p-4 sm:p-6 overflow-auto bg-[var(--surface)]">
-              <h3 className="text-sm font-mono-display uppercase tracking-widest text-[var(--muted)] mb-4">
-                Comments ({comments.length})
-              </h3>
+            {/* Right: Review Inspector Panel */}
+            <div className="lg:w-[35%] flex flex-col bg-[#0b0c10] overflow-hidden">
+              {/* Review Inspector Header */}
+              <div className="p-4 border-b border-white/[0.06] bg-[#0e0f14]">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-semibold text-white tracking-tight flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-[#5e6ad2]" />
+                    Review Inspector
+                  </span>
+                  <span className="text-[10px] font-mono text-[#8a8f98]">
+                    {comments.length} inline {comments.length === 1 ? 'note' : 'notes'}
+                  </span>
+                </div>
 
-              {selectedLine && (
-                <div className="mb-5 p-4 bg-[var(--code-surface)] border border-[var(--accent)]/30 rounded-md">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent)]" />
-                    <span className="text-xs font-mono-display text-[var(--muted)]">
-                      Line {selectedLine}
-                    </span>
+                {/* Metadata Grid */}
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="p-2.5 rounded-lg bg-[#14151f] border border-white/[0.04]">
+                    <span className="text-[10px] font-mono text-[#8a8f98] block mb-1">Author</span>
+                    <div className="flex items-center gap-2">
+                      <UserAvatar name={request.author_name || 'Author'} size="sm" />
+                      <span className="text-xs text-white truncate font-medium">{request.author_name || 'Author'}</span>
+                    </div>
                   </div>
-                  <Textarea
-                    placeholder="Add your comment..."
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    rows={3}
-                    className="mb-2 text-sm"
-                  />
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={handleSubmitComment}
-                      size="sm"
-                      disabled={submitting}
-                      className="bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90 border-0"
-                    >
-                      Comment
-                    </Button>
-                    <Button
-                      onClick={() => setSelectedLine(null)}
-                      size="sm"
-                      variant="outline"
-                    >
-                      Cancel
-                    </Button>
+
+                  <div className="p-2.5 rounded-lg bg-[#14151f] border border-white/[0.04]">
+                    <span className="text-[10px] font-mono text-[#8a8f98] block mb-1">Assigned Peer</span>
+                    <div className="flex items-center gap-2">
+                      <UserAvatar name={request.reviewer_name || 'Unassigned'} size="sm" online={Boolean(request.reviewer_name)} />
+                      <span className="text-xs text-white truncate font-medium">
+                        {request.reviewer_name || 'Open for review'}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              )}
+              </div>
 
-              <div className="space-y-3">
+              {/* Comments Feed & Inline Composer */}
+              <div className="flex-1 p-4 overflow-y-auto scrollbar-thin space-y-3">
+                {/* Active Composer on Selected Line */}
+                {selectedLine && (
+                  <div className="p-3.5 rounded-xl bg-[#141522] border border-[#5e6ad2]/50 shadow-lg animate-in fade-in slide-in-from-top-2">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-[#5e6ad2]" />
+                        <span className="text-xs font-mono font-medium text-[#8b95ea]">
+                          Adding note on Line {selectedLine}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => setSelectedLine(null)}
+                        className="text-[10px] text-[#8a8f98] hover:text-white"
+                      >
+                        Dismiss
+                      </button>
+                    </div>
+
+                    <Textarea
+                      placeholder="Write your line-specific review note..."
+                      value={newCommentText}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      rows={3}
+                      className="mb-2 text-xs bg-[#08090a]"
+                    />
+
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        onClick={() => setSelectedLine(null)}
+                        variant="ghost"
+                        size="sm"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={handleSubmitComment}
+                        variant="primary"
+                        size="sm"
+                        disabled={submitting || !newComment.trim()}
+                        className="gap-1"
+                      >
+                        <Send className="w-3 h-3" />
+                        Post Note
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Comments List */}
                 {comments.map((comment) => (
                   <div
                     key={comment.id}
-                    className="p-4 bg-[var(--code-surface)] border border-border rounded-md"
+                    className="p-3.5 rounded-xl bg-[#0e0f14] border border-white/[0.06] hover:border-white/[0.12] transition-colors"
                   >
-                    <div className="flex items-start gap-2.5 mb-2">
-                      <UserAvatar name={comment.author_name} size="sm" />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs font-medium">{comment.author_name}</span>
-                          <span className="text-[10px] text-[var(--muted)]">{formatRelativeTime(comment.created_at)}</span>
-                          <span className="flex items-center gap-1 text-[10px] font-mono-display text-[var(--accent)]">
-                            <div className="w-1 h-1 rounded-full bg-[var(--accent)]" />
-                            L{comment.line_number}
-                          </span>
-                        </div>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <UserAvatar name={comment.author_name} size="sm" />
+                        <span className="text-xs font-medium text-white">{comment.author_name}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-[#8a8f98] font-mono">
+                          {formatRelativeTime(comment.created_at)}
+                        </span>
+                        <span className="px-1.5 py-0.2 rounded font-mono text-[10px] bg-[#5e6ad2]/15 text-[#8b95ea] border border-[#5e6ad2]/30">
+                          L{comment.line_number}
+                        </span>
                       </div>
                     </div>
-                    <p className="text-sm leading-relaxed text-foreground/90">{comment.text}</p>
+                    <p className="text-xs text-[#d0d6e0] leading-relaxed">
+                      {comment.text}
+                    </p>
                   </div>
                 ))}
-              </div>
 
-              {comments.length === 0 && (
-                <div className="text-center py-12 text-[var(--muted)]">
-                  <p className="text-sm">No comments yet.</p>
-                  <p className="text-xs mt-1">Click on a line to add the first comment.</p>
-                </div>
-              )}
+                {comments.length === 0 && !selectedLine && (
+                  <div className="py-16 text-center text-[#525660]">
+                    <MessageSquarePlus className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-xs font-medium text-[#8a8f98]">No review comments yet</p>
+                    <p className="text-[11px] text-[#525660] mt-1">
+                      Hover over any line in the code view on the left and click the comment icon.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}

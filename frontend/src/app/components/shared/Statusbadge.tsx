@@ -5,44 +5,70 @@ type Status = 'pending' | 'in-review' | 'completed' | 'rejected' | 'active' | 's
 interface StatusBadgeProps {
   status: Status
   size?: 'sm' | 'md'
+  showDot?: boolean
 }
 
-export function StatusBadge({ status, size = 'md' }: StatusBadgeProps) {
-  const styles: Record<Status, string> = {
-    pending:
-      'bg-yellow-500/15 text-yellow-400 border-yellow-500/30',
-    'in-review':
-      'bg-blue-500/15 text-blue-400 border-blue-500/30',
-    completed:
-      'bg-green-500/15 text-green-400 border-green-500/30',
-    rejected:
-      'bg-red-500/15 text-red-400 border-red-500/30',
-    active:
-      'bg-green-500/15 text-green-400 border-green-500/30',
-    suspended:
-      'bg-red-500/15 text-red-400 border-red-500/30',
+export function StatusBadge({ status, size = 'md', showDot = true }: StatusBadgeProps) {
+  const config: Record<Status, { label: string; text: string; bg: string; border: string; dot: string }> = {
+    pending: {
+      label: 'Pending',
+      text: 'text-amber-400',
+      bg: 'bg-amber-500/10',
+      border: 'border-amber-500/20',
+      dot: 'bg-amber-400',
+    },
+    'in-review': {
+      label: 'In Review',
+      text: 'text-[#8b95ea]',
+      bg: 'bg-[#5e6ad2]/15',
+      border: 'border-[#5e6ad2]/30',
+      dot: 'bg-[#5e6ad2]',
+    },
+    completed: {
+      label: 'Completed',
+      text: 'text-emerald-400',
+      bg: 'bg-emerald-500/10',
+      border: 'border-emerald-500/20',
+      dot: 'bg-emerald-400',
+    },
+    rejected: {
+      label: 'Rejected',
+      text: 'text-rose-400',
+      bg: 'bg-rose-500/10',
+      border: 'border-rose-500/20',
+      dot: 'bg-rose-400',
+    },
+    active: {
+      label: 'Active',
+      text: 'text-emerald-400',
+      bg: 'bg-emerald-500/10',
+      border: 'border-emerald-500/20',
+      dot: 'bg-emerald-400',
+    },
+    suspended: {
+      label: 'Suspended',
+      text: 'text-rose-400',
+      bg: 'bg-rose-500/10',
+      border: 'border-rose-500/20',
+      dot: 'bg-rose-400',
+    },
   }
 
-  const labels: Record<Status, string> = {
-    pending: 'Pending',
-    'in-review': 'In Review',
-    completed: 'Completed',
-    rejected: 'Rejected',
-    active: 'Active',
-    suspended: 'Suspended',
-  }
-
-  const sizeClasses = size === 'sm' ? 'text-[10px] px-1.5 py-0.5' : 'text-xs px-2 py-0.5'
+  const s = config[status] || config.pending
+  const sizeClasses = size === 'sm' ? 'text-[10px] px-2 py-0.5' : 'text-xs px-2.5 py-1'
 
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded border font-mono-display',
-        styles[status],
+        'inline-flex items-center gap-1.5 rounded-full border font-mono tracking-tight font-medium select-none',
+        s.bg,
+        s.border,
+        s.text,
         sizeClasses
       )}
     >
-      {labels[status]}
+      {showDot && <span className={cn('w-1.5 h-1.5 rounded-full shrink-0 animate-pulse', s.dot)} />}
+      <span>{s.label}</span>
     </span>
   )
 }
