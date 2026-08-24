@@ -253,7 +253,7 @@ export function ReviewDetails() {
 
                     <Textarea
                       placeholder="Write your line-specific review note..."
-                      value={newCommentText}
+                      value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
                       rows={3}
                       className="mb-2 text-xs bg-[#08090a]"
